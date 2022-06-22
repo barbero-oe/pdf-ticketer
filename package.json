@@ -2,8 +2,9 @@
   "name": "pdf-ticketer",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
+    "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -11,5 +12,8 @@
   "volta": {
     "node": "16.15.1",
     "npm": "8.12.2"
+  },
+  "dependencies": {
+    "jspdf": "^2.5.1"
   }
 }
