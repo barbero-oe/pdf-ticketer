@@ -1,13 +1,13 @@
 import { jsPDF } from "jspdf"
 import { promises as fs } from "fs"
+import path from "path"
 
 const TICKET_PATH = "test/assets/rifa-01.png"
 const PDF_PATH = "out/tickets.pdf"
 const MARGIN = 5
 const ROWS = 5
 const COLUMNS = 1
-const NUMBERS = 1
-const PAGES = 2
+const NUMBERS = 20
 
 
 export interface Size {
@@ -16,6 +16,7 @@ export interface Size {
 }
 
 export interface Image extends Size {
+    name: string
     fileType: string
     bytes: Buffer
 }
@@ -23,21 +24,44 @@ export interface Image extends Size {
 export default async function main() {
     const pdf = new jsPDF({ unit: 'px', compress: true, hotfixes: ['px_scaling'] })
 
+    await addFont(pdf, './test/assets/fonts/VastShadow-regular.ttf', 'VastShadow', 'normal')
+
     const ticket = await loadImage(TICKET_PATH, pdf)
     const page = pageSize(pdf)
     const cell = cellSize(page, ROWS, COLUMNS)
     const box = ticketBox(cell, MARGIN)
-    const ticketSize = resizeForContainer(ticket, box)
+    const resizedTicket = resizeForContainer(ticket, box)
+    console.log('Image resized %s', logImage(resizedTicket))
 
-    for (let page = 1; page <= PAGES; page++) {
+    const pages = NUMBERS / (COLUMNS * ROWS)
+    pdf.setFont('VastShadow', 'normal')
+    for (let page = 1; page <= pages; page++) {
         for (let row = 0; row < ROWS; row++) {
             for (let column = 0; column < COLUMNS; column++) {
-                addImage(pdf, ticket, ticketSize, row, column, MARGIN)
+                addImage(pdf, resizedTicket, box, row, column, MARGIN)
+                addText(pdf, "asdf", 50, 50, box, row, column, MARGIN)
             }
         }
-        if (page != PAGES) pdf.addPage()
+        if (page != pages) pdf.addPage()
     }
     pdf.save(PDF_PATH)
+}
+
+async function addFont(pdf: jsPDF, fontPath: string, fontName: string, style: string) {
+    const abspath = path.resolve(fontPath)
+    console.log('Loading font [%s]', abspath)
+    const font = await fs.readFile(abspath)
+    const ext = path.extname(abspath)
+    const id = `${fontName}-${style}${ext}`
+    pdf.addFileToVFS(id, font.toString('base64'));
+    pdf.addFont(id, fontName, style);
+    console.log('Font added [%s]', id)
+}
+
+function addText(pdf: jsPDF, text: string, coordX: number, coordY: number, box: Size, row: number, column: number, margin: number) {
+    const x = margin + coordX + column * (margin + box.width)
+    const y = margin + coordY + row * (margin + box.height)
+    pdf.text(text, x, y, { align: 'center', angle: 0 })
 }
 
 function addImage(pdf: jsPDF, image: Image, box: Size, row: number, column: number, margin: number) {
@@ -46,7 +70,7 @@ function addImage(pdf: jsPDF, image: Image, box: Size, row: number, column: numb
     pdf.addImage(
         image.bytes, image.fileType,
         x, y,
-        box.width, box.height,
+        image.width, image.height,
         'ticket', 'SLOW')
 }
 
@@ -73,20 +97,34 @@ function pageSize(doc: jsPDF): Size {
     return { width, height }
 }
 
-export function resizeForContainer(original: Size, container: Size): Size {
-    const originalRatio = original.height / original.width
+export function resizeForContainer(image: Image, container: Size): Image {
+    const imageRatio = image.height / image.width
     const containerRatio = container.height / container.width
-    if (containerRatio >= originalRatio) {
+    if (containerRatio >= imageRatio) {
         const width = container.width
-        return { width, height: width * originalRatio }
+        return { ...image, width, height: width * imageRatio }
     } else {
         const height = container.height
-        return { height, width: height / originalRatio }
+        return { ...image, height, width: height / imageRatio }
     }
 }
 
-async function loadImage(path: string, pdf: jsPDF): Promise<Image> {
-    const bytes = await fs.readFile(path)
+async function loadImage(imagePath: string, pdf: jsPDF): Promise<Image> {
+    const abspath = path.resolve(imagePath)
+    console.log('Loading image [%s]', abspath)
+    const bytes = await fs.readFile(abspath)
     const { width, height, fileType } = pdf.getImageProperties(bytes)
-    return { bytes, width, height, fileType }
+    const name = path.basename(abspath)
+    const ratio = height / width
+    const image = { bytes, width, height, fileType, name, ratio }
+    console.log('Image loaded %s', logImage(image))
+    return image
+}
+
+function logImage(image: Image): string {
+    return logObject(image, 'name', 'fileType', 'height', 'width', 'ratio')
+}
+
+function logObject(obj: any, ...keys: string[]): string {
+    return keys.map(key => `${key}=[${obj[key]}]`).join(" ")
 }
