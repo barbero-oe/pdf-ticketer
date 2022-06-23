@@ -98,14 +98,18 @@ function pageSize(doc: jsPDF): Size {
 }
 
 export function resizeForContainer(image: Image, container: Size): Image {
-    const imageRatio = image.height / image.width
+    return {...image, ...resize(image, container)}
+}
+
+export function resize(original: Size, container: Size): Size {
+    const imageRatio = original.height / original.width
     const containerRatio = container.height / container.width
     if (containerRatio >= imageRatio) {
         const width = container.width
-        return { ...image, width, height: width * imageRatio }
+        return { width, height: width * imageRatio }
     } else {
         const height = container.height
-        return { ...image, height, width: height / imageRatio }
+        return { height, width: height / imageRatio }
     }
 }
 

@@ -1,4 +1,4 @@
-import { resizeForContainer, Size } from "../src/ticketer"
+import { resize, Size } from "../src/ticketer"
 
 const wider: Size = { width: 100, height: 50 }
 const taller: Size = { width: 50, height: 100 }
@@ -15,6 +15,6 @@ const cases = [
     [square, taller, { width: 50, height: 50 }],
 ]
 
-test.each(cases)("resizeForContainer(%s, %s) == %s", (a, b, expected) => {
-    expect(resizeForContainer(a, b)).toEqual(expected)
+test.each(cases)("resize(%s, %s) == %s", (a, b, expected) => {
+    expect(resize(a, b)).toEqual(expected)
 })
