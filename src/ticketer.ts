@@ -2,12 +2,13 @@ import { jsPDF } from "jspdf"
 import { promises as fs } from "fs"
 import path from "path"
 
-const TICKET_PATH = "test/assets/rifa-01.png"
+const TICKET_PATH = "test/assets/image1.png"
 const PDF_PATH = "out/tickets.pdf"
-const MARGIN = 5
+const MARGIN = 10
 const ROWS = 5
 const COLUMNS = 1
-const NUMBERS = 20
+const NUMBERS = 10000
+const PIXEL_RATIO = 72 / 96
 
 export interface Size {
   width: number
@@ -27,32 +28,43 @@ export default async function main() {
     hotfixes: ["px_scaling"],
   })
 
-  await addFont(
-    pdf,
-    "./test/assets/fonts/VastShadow-regular.ttf",
-    "VastShadow",
-    "normal"
-  )
+  // await addFont(
+  //   pdf,
+  //   "./test/assets/fonts/VastShadow-regular.ttf",
+  //   "VastShadow",
+  //   "normal"
+  // )
+  // console.log(pdf.getFontList())
 
   const ticket = await loadImage(TICKET_PATH, pdf)
+
+  const pages = NUMBERS / (COLUMNS * ROWS)
+  pdf.setFont("helvetica", "normal")
+  pdf.setFontSize(40)
+  createPages(pdf, ticket, pages)
+  pdf.save(PDF_PATH)
+}
+
+function createPages(pdf: jsPDF, ticket: Image, pages: number) {
   const page = pageSize(pdf)
   const cell = cellSize(page, ROWS, COLUMNS)
   const box = ticketBox(cell, MARGIN)
   const resizedTicket = resizeForContainer(ticket, box)
   console.log("Image resized %s", logImage(resizedTicket))
-
-  const pages = NUMBERS / (COLUMNS * ROWS)
-  pdf.setFont("VastShadow", "normal")
+  let num = 0
   for (let page = 1; page <= pages; page++) {
     for (let row = 0; row < ROWS; row++) {
       for (let column = 0; column < COLUMNS; column++) {
+        if (num == NUMBERS) return
+        num++
+        const displayNumber = `${num}`.padStart(5, "0")
         addImage(pdf, resizedTicket, box, row, column, MARGIN)
-        addText(pdf, "asdf", 50, 50, box, row, column, MARGIN)
+        addText(pdf, displayNumber, 130, 200, 90, box, row, column, MARGIN)
+        addText(pdf, displayNumber, 670, 230, 0, box, row, column, MARGIN)
       }
     }
     if (page != pages) pdf.addPage()
   }
-  pdf.save(PDF_PATH)
 }
 
 async function addFont(
@@ -76,6 +88,7 @@ function addText(
   text: string,
   coordX: number,
   coordY: number,
+  angle: number,
   box: Size,
   row: number,
   column: number,
@@ -83,7 +96,7 @@ function addText(
 ) {
   const x = margin + coordX + column * (margin + box.width)
   const y = margin + coordY + row * (margin + box.height)
-  pdf.text(text, x, y, { align: "center", angle: 0 })
+  pdf.text(text, x, y, { align: "center", angle  })
 }
 
 function addImage(
@@ -124,10 +137,9 @@ function ticketBox(box: Size, margin: number): Size {
 
 function pageSize(doc: jsPDF): Size {
   const info = doc.getCurrentPageInfo()
-  const pixelRatio = 72 / 96
   const box = info.pageContext.mediaBox
-  const width = Math.abs(box.topRightX - box.bottomLeftX) / pixelRatio
-  const height = Math.abs(box.topRightY - box.bottomLeftY) / pixelRatio
+  const width = Math.abs(box.topRightX - box.bottomLeftX) / PIXEL_RATIO
+  const height = Math.abs(box.topRightY - box.bottomLeftY) / PIXEL_RATIO
   return { width, height }
 }
 
