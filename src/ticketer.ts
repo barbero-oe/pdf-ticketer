@@ -40,7 +40,7 @@ export default async function main() {
 
   const pages = NUMBERS / (COLUMNS * ROWS)
   pdf.setFont("helvetica", "normal")
-  pdf.setFontSize(40)
+  pdf.setFontSize(35)
   createPages(pdf, ticket, pages)
   pdf.save(PDF_PATH)
 }
@@ -59,8 +59,8 @@ function createPages(pdf: jsPDF, ticket: Image, pages: number) {
         num++
         const displayNumber = `${num}`.padStart(5, "0")
         addImage(pdf, resizedTicket, box, row, column, MARGIN)
-        addText(pdf, displayNumber, 130, 200, 90, box, row, column, MARGIN)
-        addText(pdf, displayNumber, 670, 230, 0, box, row, column, MARGIN)
+        addText(pdf, displayNumber, 110, 170, 90, box, row, column, MARGIN)
+        addText(pdf, displayNumber, 550, 190, 0, box, row, column, MARGIN)
       }
     }
     if (page != pages) pdf.addPage()
