@@ -96,7 +96,7 @@ function addText(
 ) {
   const x = margin + coordX + column * (margin + box.width)
   const y = margin + coordY + row * (margin + box.height)
-  pdf.text(text, x, y, { align: "center", angle  })
+  pdf.text(text, x, y, { align: "center", angle })
 }
 
 function addImage(
