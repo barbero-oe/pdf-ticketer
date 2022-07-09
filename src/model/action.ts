@@ -1,5 +1,5 @@
 import Pdf from "./pdf"
-import { Ticketer } from "./ticketer"
+import { Ticketer, TicketPage } from "./ticketer"
 import { Page, TicketElement } from "./types"
 
 export function createTickets(
@@ -9,6 +9,8 @@ export function createTickets(
   ...elements: TicketElement[]
 ) {
   const pdf = new Pdf(output)
-  const ticketer = new Ticketer(page, pdf)
+  const { width, height } = pdf.pageSize()
+  const ticketPage = new TicketPage(width, height, page.rows, page.columns)
+  const ticketer = new Ticketer(ticketPage, pdf)
   ticketer.print(quantity, elements)
 }

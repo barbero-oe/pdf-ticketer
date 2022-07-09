@@ -1,8 +1,8 @@
 import { jsPDF } from "jspdf"
 import { promises as fs } from "fs"
 import Pdf from "./pdf"
-import {Page, TicketElement} from "./types"
-import * as path from "path";
+import { Page, Position, TicketElement } from "./types"
+import * as path from "path"
 
 const TICKET_PATH = "test/assets/image1.png"
 const PDF_PATH = "out/tickets.pdf"
@@ -13,8 +13,8 @@ const NUMBERS = 10000
 const PIXEL_RATIO = 72 / 96
 
 export interface Size {
-  width: number
-  height: number
+  readonly width: number
+  readonly height: number
 }
 
 export interface Image extends Size {
@@ -26,26 +26,65 @@ export interface Image extends Size {
 type Ticket = TicketElement[]
 
 export class Ticketer {
-  constructor(private readonly page: Page, private readonly pdf: Pdf) {}
+  constructor(private readonly page: TicketPage, private readonly pdf: Pdf) {}
 
   print(quantity: number, ticket: Ticket) {
-    const { rows, columns } = this.page
-    let current = 0
-    for (let row = 0; row < rows; row++)
-      for (let column = 0; column < columns; column++) {
-        if (current++ === quantity) return
-        this.printTicket(current, ticket, row, column)
-      }
+    for (let current = 0; current < quantity; current++) {
+      this.printTicket(current, ticket)
+      // if (this.isPageFilled(current)) this.pdf.addPage()
+    }
   }
 
-  private printTicket(
-    currentTicket: number,
-    ticket: Ticket,
-    row: number,
-    column: number
+  private isPageFilled(currentTicket: number): boolean {
+    return currentTicket !== 0 && currentTicket % this.page.ticketsPerPage === 0
+  }
+
+  private printTicket(currentTicket: number, ticket: Ticket) {
+    const offset = this.page.calculateOffset(currentTicket)
+    for (let element of ticket) {
+      const el = Ticketer.offset(element, offset)
+      this.pdf.add(el)
+    }
+  }
+
+  private static offset(
+    element: TicketElement,
+    offset: Position
+  ): TicketElement {
+    return offset.x === 0 && offset.y === 0
+      ? element
+      : {
+          ...element,
+          x: element.x + offset.x,
+          y: element.y + offset.y,
+        }
+  }
+}
+
+export class TicketPage {
+  readonly ticketsPerPage: number
+  private readonly cell: Size
+
+  constructor(
+    private readonly width: number,
+    private readonly height: number,
+    private readonly rows: number,
+    private readonly columns: number
   ) {
-    for (let element of ticket)
-      if (element.type === "text") this.pdf.addText(element.value)
+    this.cell = {
+      width: width / columns,
+      height: height / rows,
+    }
+    this.ticketsPerPage = rows * columns
+  }
+
+  calculateOffset(ticketNumber: number): Position {
+    const column = ticketNumber % this.columns
+    const row = Math.floor(ticketNumber / this.columns) % this.rows
+    return {
+      x: column * this.cell.width,
+      y: row * this.cell.height,
+    }
   }
 }
 

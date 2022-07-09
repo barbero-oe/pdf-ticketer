@@ -1,6 +1,7 @@
 import { createTickets } from "../src/model/action"
-import { resize, Size } from "../src/model/ticketer"
+import { resize, Size, TicketPage } from "../src/model/ticketer"
 import MockPdf from "./MockPdf"
+import { Position, Text } from "../src/model/types"
 
 let mockPdf: MockPdf
 
@@ -38,7 +39,7 @@ test("add text a single time", () => {
     { columns: 2, rows: 2 },
     { type: "text", x: 10, y: 10, value: "value" }
   )
-  const texts = mockPdf.elements.filter((el) => el === "value")
+  const texts = mockPdf.elements.filter((el) => (el as Text).value === "value")
   expect(texts.length).toEqual(1)
 })
 
@@ -49,6 +50,40 @@ test("add text multiple times", () => {
     { columns: 2, rows: 2 },
     { type: "text", x: 10, y: 10, value: "value" }
   )
-  const texts = mockPdf.elements.filter((el) => el === "value")
+  const texts = mockPdf.elements.filter((el) => (el as Text).value === "value")
   expect(texts.length).toEqual(4)
 })
+
+test("prints text in multple places", () => {
+  createTickets(
+    "/mock/path/file.pdf",
+    4,
+    { columns: 2, rows: 2 },
+    { type: "text", x: 10, y: 10, value: "value" }
+  )
+  const texts = mockPdf.elements.filter((el) => (el as Text).value === "value")
+  console.table(mockPdf.elements)
+  expect(texts.length).toEqual(4)
+})
+
+const offsets = [
+  [0, { x: 0, y: 0 }],
+  [1, { x: 5, y: 0 }],
+  [2, { x: 0, y: 5 }],
+  [3, { x: 5, y: 5 }],
+  [4, { x: 0, y: 0 }],
+  [5, { x: 5, y: 0 }],
+  [6, { x: 0, y: 5 }],
+  [7, { x: 5, y: 5 }],
+]
+
+test.each(offsets)(
+  "offset(%s) == %s",
+  (ticketNumber: number, expected: Position) => {
+    const page = new TicketPage(10, 10, 2, 2)
+
+    const actual = page.calculateOffset(ticketNumber)
+
+    expect(actual).toEqual(expected)
+  }
+)
