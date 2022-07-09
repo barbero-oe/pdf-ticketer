@@ -1,6 +1,8 @@
 import { jsPDF } from "jspdf"
 import { promises as fs } from "fs"
 import path from "path"
+import Pdf from "./pdf"
+import { Page, Element } from "./types"
 
 const TICKET_PATH = "test/assets/image1.png"
 const PDF_PATH = "out/tickets.pdf"
@@ -19,6 +21,30 @@ export interface Image extends Size {
   name: string
   fileType: string
   bytes: Buffer
+}
+
+export class Ticketer {
+  constructor(private readonly page: Page, private readonly pdf: Pdf) {}
+
+  print(quantity: number, elements: Element[]) {
+    const { rows, columns } = this.page
+    let ticket = 0
+    for (let row = 0; row < rows; row++)
+      for (let column = 0; column < columns; column++) {
+        if (ticket++ === quantity) return
+        this.printTicket(ticket, elements, row, column)
+      }
+  }
+
+  private printTicket(
+    numbered: number,
+    elements: Element[],
+    row: number,
+    column: number
+  ) {
+    for (let element of elements)
+      if (element.type === "text") this.pdf.addText(element.value)
+  }
 }
 
 export default async function main() {

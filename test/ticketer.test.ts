@@ -1,19 +1,14 @@
 import { createTickets } from "../src/model/action"
-import { resize, Size } from "../src/ticketer"
+import { resize, Size } from "../src/model/ticketer"
+import MockPdf from "./MockPdf"
 
-class MockPdf {
-  constructor(private readonly elements: any[]) {}
-  addText(text: string) {
-    this.elements.push(text)
-  }
-}
+let mockPdf: MockPdf
 
-let elements: any[] = []
 jest.mock("../src/model/pdf", () => ({
   __esModule: true,
   default: function () {
-    elements = []
-    return new MockPdf(elements)
+    mockPdf = new MockPdf()
+    return mockPdf
   },
 }))
 
@@ -36,12 +31,24 @@ test.each(cases)("resize(%s, %s) == %s", (a, b, expected) => {
   expect(resize(a, b)).toEqual(expected)
 })
 
-test("f", () => {
+test("add text a single time", () => {
   createTickets(
     "/mock/path/file.pdf",
-    { columns: 1, rows: 1 },
-    // { type: "image", path: "./assets/rifa-01.png", x: 5, y: 5 },
-    { type: "counter", x: 10, y: 10 }
+    1,
+    { columns: 2, rows: 2 },
+    { type: "text", x: 10, y: 10, value: "value" }
   )
-  expect(elements).toContain("text")
+  const texts = mockPdf.elements.filter((el) => el === "value")
+  expect(texts.length).toEqual(1)
+})
+
+test("add text multiple times", () => {
+  createTickets(
+    "/mock/path/file.pdf",
+    4,
+    { columns: 2, rows: 2 },
+    { type: "text", x: 10, y: 10, value: "value" }
+  )
+  const texts = mockPdf.elements.filter((el) => el === "value")
+  expect(texts.length).toEqual(4)
 })
