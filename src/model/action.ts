@@ -1,12 +1,12 @@
 import Pdf from "./pdf"
 import { Ticketer } from "./ticketer"
-import { Page, Element } from "./types"
+import { Page, TicketElement } from "./types"
 
 export function createTickets(
   output: string,
   quantity: number,
   page: Page,
-  ...elements: Element[]
+  ...elements: TicketElement[]
 ) {
   const pdf = new Pdf(output)
   const ticketer = new Ticketer(page, pdf)

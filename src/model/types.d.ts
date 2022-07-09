@@ -22,4 +22,4 @@ export interface Counter extends Position {
   type: "counter"
 }
 
-type Element = Image | Text | Counter
+type TicketElement = Image | Text | Counter
