@@ -1,3 +1,3 @@
-import main from "./ticketer"
+import main from "./model/ticketer"
 
 main()
